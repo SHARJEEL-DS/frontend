@@ -1,103 +1,266 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import { Dialog, Transition } from "@headlessui/react";
+import {
+  AiOutlinePlus,
+  AiOutlineCheckCircle,
+  AiOutlineClockCircle,
+} from "react-icons/ai";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Fragment } from "react";
+
+const HomePage = () => {
+  const [tasks, setTasks] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [editingTask, setEditingTask] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
+
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("https://bankenddd.onrender.com/api/tasks");
+      setTasks(res.data);
+    } catch (err) {
+      console.error("Error loading tasks:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const onSubmit = async (data) => {
+    try {
+      if (editingTask) {
+        await axios.put(
+          `https://bankenddd.onrender.com/api/tasks/${editingTask._id}`,
+          data
+        );
+        toast.success("Task updated");
+      } else {
+        await axios.post("https://bankenddd.onrender.com/api/tasks", data);
+        toast.success("Task created");
+      }
+      reset();
+      setOpen(false);
+      setEditingTask(null);
+      fetchTasks();
+    } catch (err) {
+      toast.error("Submit failed");
+    }
+  };
+
+  const openEditModal = (task) => {
+    setEditingTask(task);
+    reset(task);
+    setOpen(true);
+  };
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "all") return true;
+    return task.status === filter;
+  });
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 transition-all duration-300">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">📝 My Tasks</h1>
+          <button
+            onClick={() => {
+              setEditingTask(null);
+              reset();
+              setOpen(true);
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition duration-200"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <AiOutlinePlus className="text-xl" /> Add Task
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="mb-6">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <ul className="space-y-4">
+          {filteredTasks.map((task) => (
+            <li
+              key={task._id}
+              className="bg-white p-5 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition duration-300"
+            >
+              <div className="flex justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">{task.title}</h2>
+                  {task.description && (
+                    <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    Created: {new Date(task.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div
+                    className="cursor-pointer hover:scale-105 transition"
+                    onClick={async () => {
+                      try {
+                        const newStatus =
+                          task.status === "completed" ? "pending" : "completed";
+                        await axios.put(
+                          `https://bankenddd.onrender.com/api/tasks/${task._id}`,
+                          { status: newStatus }
+                        );
+                        toast.success(`Marked as ${newStatus}`);
+                        fetchTasks();
+                      } catch (err) {
+                        toast.error("Failed to update status");
+                      }
+                    }}
+                  >
+                    {task.status === "completed" ? (
+                      <AiOutlineCheckCircle className="text-green-500 text-2xl" />
+                    ) : (
+                      <AiOutlineClockCircle className="text-yellow-500 text-2xl" />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => openEditModal(task)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await axios.delete(
+                          `https://bankenddd.onrender.com/api/tasks/${task._id}`
+                        );
+                        toast.success("Task deleted");
+                        fetchTasks();
+                      } catch (err) {
+                        toast.error("Failed to delete task");
+                      }
+                    }}
+                    className="text-sm text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Modal */}
+        <Transition appear show={open} as={Fragment}>
+          <Dialog as="div" className="relative z-50" onClose={() => setOpen(false)}>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black bg-opacity-30" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center p-4 text-center">
+                <Transition.Child
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
+                >
+                  <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                    <Dialog.Title className="text-lg font-bold mb-4">
+                      {editingTask ? "Edit Task" : "Add Task"}
+                    </Dialog.Title>
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                      <div>
+                        <label className="block mb-1 font-medium">Title</label>
+                        <input
+                          {...register("title", { required: "Title is required" })}
+                          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                        />
+                        {errors.title && (
+                          <p className="text-red-500 text-sm">{errors.title.message}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block mb-1 font-medium">Description</label>
+                        <textarea
+                          {...register("description")}
+                          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block mb-1 font-medium">Status</label>
+                        <select
+                          {...register("status")}
+                          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false);
+                            setEditingTask(null);
+                            reset();
+                          }}
+                          className="px-4 py-2 border rounded hover:bg-gray-100"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          {editingTask ? "Update" : "Create"}
+                        </button>
+                      </div>
+                    </form>
+                  </Dialog.Panel>
+                </Transition.Child>
+              </div>
+            </div>
+          </Dialog>
+        </Transition>
+
+        <ToastContainer position="top-right" autoClose={3000} />
+      </div>
     </div>
   );
-}
+};
+
+export default HomePage;
